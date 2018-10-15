@@ -14,81 +14,90 @@ class ImageData:
         self.image = image
 
 inputSize = 784
-numSlasses = 10
-numTrains = 5
-learningRate = 0.00001
-size = 100
-
-trainLbls = trainings[0][:size * 6]
-trainImgs = [image.flatten() for image in trainings[1][:size * 6]]
-testLbls = tests[0][:size]
-testImgs = [image.flatten() for image in tests[1][:size]]
+learningRate = 0.01
+testSize = 10000
+trainSize = 60000
 
 trainingData = []
 testData = []
 
-for i in range(size * 6):
-    newImage = [float(p) / 100 for p in trainImgs[i]]
-    trainingData.append(ImageData(trainLbls[i], np.array(newImage)))
+for label, image in zip(trainings[0][:trainSize], trainings[1][:trainSize]):
+    newImage = [float(p) for p in image.flatten()]
+    trainingData.append(ImageData(label, np.array(newImage)))
+    # trainingData.append(ImageData(label, image.flatten()))
 
-for i in range(size):
-    newImage = [float(p) / 100 for p in testImgs[i]]
-    testData.append(ImageData(testLbls[i], np.array(newImage)))
+for label, image in zip(tests[0][:testSize], tests[1][:testSize]):
+    newImage = [float(p) for p in image.flatten()]
+    testData.append(ImageData(label, np.array(newImage)))
+    # testData.append(ImageData(label, image.flatten()))
 
-weightedVectors = [[0] * 784 for _ in range(9)]
+weightedVectors = [[0] * 784 for _ in range(10)]
 
 preprocessingTime = time.time()
 print("--- Preprocessing spent {} seconds ---".format(preprocessingTime - startTime))
 
-def denominatorofP(x):
-    exps = []
-    for w in weightedVectors:
-        exps.append(np.exp(np.dot(w, x)))
-    return 1 + sum(exps)
+def getPYoverX(x, label):
+    inner = [np.inner(w, x) for w in weightedVectors]
+    # inner.append(0)
+    inner = np.array(inner)
 
-def getPYoverX(x, y):
-    if y == 9:
-        return 1 / denominatorofP(x)
-    return np.exp(np.dot(weightedVectors[y], x)) / denominatorofP(x)
+    b = max(inner)
+    y = np.exp(inner - b)
+    p = y / sum(y)
+    return p[label]
 
 def getPrediction(d):
-    p = [0] * 10
-    for i in range(9):
-        p[i] = getPYoverX(d.image, i)
-    p[9] = 1 - sum(p)
+    p = [getPYoverX(d.image, i) for i in range(10)]
     return np.argmax(p)
 
-def getSumInGraidentAscent(x, guessP):
-    alphas = [(x * (y - guessP)) for y in range(10)]
-    return sum(alphas) 
+# def getSumInGraidentAscent(x, guess, guessP):
+#     alphas = [(x * (y - guessP)) for y in range(10)]
+#     return sum(alphas) 
     
-def gradientAscent(weighted, imageData):
-    newVector = []
-    predict = getPrediction(imageData)
-    predictP = getPYoverX(imageData.image, predict)
-    for w, x in zip(weighted, imageData.image):
-        newVector.append(w + learningRate * getSumInGraidentAscent(x, predictP))
-    return newVector
+# def gradientAscent(weighted, imageData):
+#     newVector = []
+#     predict = getPrediction(imageData)
+#     predictP = getPYoverX(imageData.image, predict)
+#     for w, x in zip(weighted, imageData.image):
+#         newVector.append(w + learningRate * getSumInGraidentAscent(x, predict, predictP))
+#     return newVector
 
-def trainW():
+# def trainW():
+#     iterStartTime = time.time()
+#     for td in trainingData:
+#         if td.label < 9:
+#             weightedVectors[td.label] = gradientAscent(weightedVectors[td.label], td)
+#     print("--- This iteration spent {} seconds ---".format(time.time() - iterStartTime))   
+
+def trainW2():
+    global weightedVectors
     iterStartTime = time.time()
+    sumW = [[0] * 784 for _ in range(10)]
     for td in trainingData:
-        if td.label < 9:
-            weightedVectors[td.label] = gradientAscent(weightedVectors[td.label], td)
-    print("--- This iteration spent {} seconds ---".format(time.time() - iterStartTime))   
+        # if td.label < 9:
+        diffP = 1 - getPYoverX(td.image, td.label)
+        for i in range(784):
+            sumW[td.label][i] += td.image[i] * diffP
+    
+    for i in range(10):
+        for j in range(784):
+            weightedVectors[i][j] += sumW[i][j]
+    # print("--- This iteration spent {} seconds ---".format(time.time() - iterStartTime))
 
 def test(n):
+    # print(sum(weightedVectors[0]))
     testStartTime = time.time()
     correct = 0
     for td in testData:
         if td.label == getPrediction(td):
+            # print(td.label)
             correct += 1
-    print("Iterate {} times: {}".format(n, correct / size))
-    print("--- This testing spent {} seconds ---".format(time.time() - testStartTime))   
+    print("Iterate {} times: {}".format(n + 1, correct / testSize))
+    # print("--- This testing spent {} seconds ---".format(time.time() - testStartTime))   
 
-iterations = 3
+iterations = 100
 for i in range(iterations):
-    trainW()
+    trainW2()
     test(i)
 
 print("--- Totally, {} iterations spent {} seconds ---".format(iterations, time.time() - startTime))
