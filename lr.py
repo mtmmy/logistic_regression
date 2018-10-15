@@ -18,7 +18,7 @@ testSize = 10000
 trainSize = 60000
 
 trainingData = [ImageData(label, image.flatten().astype(float)) for label, image in zip(trainings[0][:trainSize], trainings[1][:trainSize])]
-testData = [ImageData(label, image.flatten().astype(float)) for label, image in zip(tests[0][:trainSize], tests[1][:trainSize])]
+testData = [ImageData(label, image.flatten().astype(float)) for label, image in zip(tests[0][:testSize], tests[1][:testSize])]
 
 weightedVectors = np.zeros((10, 784), dtype=float)
 
