@@ -12,10 +12,11 @@ class ImageData:
     def __init__(self, label, image):
         self.label = label
         self.image = image
+        self.image = image
 
-learningRate = 0.00001
 testSize = 10000
 trainSize = 60000
+learningRate = 0.00001 / trainSize
 
 trainingData = [ImageData(label, image.flatten().astype(float)) for label, image in zip(trainings[0][:trainSize], trainings[1][:trainSize])]
 testData = [ImageData(label, image.flatten().astype(float)) for label, image in zip(tests[0][:testSize], tests[1][:testSize])]
@@ -37,19 +38,19 @@ def getPrediction(d):
     return np.argmax(getPs(d.image))
 
 def trainIteration2():
-    global weightedVectors 
+    global weightedVectors
     sumW = np.zeros((9, 784), dtype=float)
     for td in trainingData:
         guessP = getPs(td.image)
         for l in range(9):
             if l == td.label:
-                sumW[l] += td.image * (1 - guessP[l]) / len(trainingData)
+                sumW[l] += td.image * (1 - guessP[l])
             else:
-                sumW[l] -= td.image * guessP[l] / len(trainingData)
+                sumW[l] -= td.image * guessP[l]
         
     weightedVectors += learningRate * sumW
 
-def test(n):
+def test(n):    
     correct = 0
     for td in testData:
         if td.label == getPrediction(td):
@@ -62,8 +63,7 @@ iterations = 100
 accuracyRate = []
 for i in range(iterations):
     trainIteration2()
-    accuracy = test(i)
-    accuracyRate.append(accuracy)
+    accuracyRate.append(test(i))
 
 print(accuracyRate)
 print("--- Totally, {} iterations spent {} seconds ---".format(iterations, time.time() - startTime))
