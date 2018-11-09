@@ -16,7 +16,7 @@ class ImageData:
 
 testSize = 10000
 trainSize = 60000
-learningRate = 0.00001 / trainSize
+learningRate = 0.00002 / trainSize
 
 trainingData = [ImageData(label, image.flatten().astype(float)) for label, image in zip(trainings[0][:trainSize], trainings[1][:trainSize])]
 testData = [ImageData(label, image.flatten().astype(float)) for label, image in zip(tests[0][:testSize], tests[1][:testSize])]
